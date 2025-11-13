@@ -56,9 +56,12 @@
                 class="toolbox-group-one"
                 :class="{ active: group.groupId == selectGroup.groupId }"
                 v-if="
-                  tool.isEmpty(searchGroup) ||
-                  group.name.toLowerCase().indexOf(searchGroup.toLowerCase()) >=
-                    0
+                  (
+                    tool.isEmpty(searchGroup) ||
+                    group.name.toLowerCase().indexOf(searchGroup.toLowerCase()) >=
+                      0
+                  ) &&
+                  !(group.isNoGroup && group.count === 0)
                 "
                 @click="toSelectGroup(group)"
                 @contextmenu="groupContextmenu(group)"

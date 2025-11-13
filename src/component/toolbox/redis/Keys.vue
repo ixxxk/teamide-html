@@ -168,13 +168,13 @@ export default {
       ready: false,
       searchForm: {
         database: 0,
-        pattern: "xx*",
+        pattern: "*",
         size: 200,
         count: 10000,
       },
       splitChars: ": - / _ #",
       searchResult: null,
-      viewModel: "list",
+      viewModel: "tree",
       filterText: "",
       defaultProps: {
         children: "children",
