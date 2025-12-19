@@ -258,8 +258,8 @@ export default {
       }
       return value;
     },
-    async loadOwners() {
-      let param = this.toolboxWorker.getWorkParam({});
+    async loadOwners(data) {
+      let param = this.toolboxWorker.getWorkParam(data || {});
       let res = await this.server.database.owners(param);
       if (res.code != 0) {
         this.tool.error(res.msg);
@@ -299,10 +299,16 @@ export default {
       let info = this.toolboxWorker.getInfo();
       return info != null && info.dialectType == "mysql";
     },
-    async loadTables(ownerName) {
-      let param = this.toolboxWorker.getWorkParam({
-        ownerName: ownerName,
-      });
+    async loadTables(ownerName, data) {
+      data = data || {};
+      let param = this.toolboxWorker.getWorkParam(
+        Object.assign(
+          {
+            ownerName: ownerName,
+          },
+          data
+        )
+      );
 
       let res = await this.server.database.tables(param);
       if (res.code != 0) {
@@ -318,15 +324,21 @@ export default {
       });
       return list;
     },
-    async getTableDetail(ownerName, tableName) {
-      let res = await this.loadTableDetail(ownerName, tableName);
+    async getTableDetail(ownerName, tableName, data) {
+      let res = await this.loadTableDetail(ownerName, tableName, data);
       return res;
     },
-    async loadTableDetail(ownerName, tableName) {
-      let param = this.toolboxWorker.getWorkParam({
-        ownerName: ownerName,
-        tableName: tableName,
-      });
+    async loadTableDetail(ownerName, tableName, data) {
+      data = data || {};
+      let param = this.toolboxWorker.getWorkParam(
+        Object.assign(
+          {
+            ownerName: ownerName,
+            tableName: tableName,
+          },
+          data
+        )
+      );
       let res = await this.server.database.tableDetail(param);
       if (res.code != 0) {
         this.tool.error(res.msg);

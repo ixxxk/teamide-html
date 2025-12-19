@@ -61,7 +61,7 @@
                   <span>{{ node.label }}</span>
                   <div class="toolbox-editor-tree-btn-group">
                     <div
-                      v-if="data.isOwner || data.isOwnerTables"
+                      v-if="data.isDatabase || data.isOwner || data.isOwnerTables"
                       class="tm-link color-grey ft-14 mgr-4"
                       @click="toReloadChildren(data)"
                     >
@@ -128,6 +128,31 @@ export default {
     },
   },
   methods: {
+    getOwnerKey(owner) {
+      if (owner && owner.databaseName) {
+        return "owner:" + owner.databaseName + ":" + owner.ownerName;
+      }
+      return "owner:" + owner.ownerName;
+    },
+    getOwnerTablesKey(owner) {
+      if (owner && owner.databaseName) {
+        return "owner:tables:" + owner.databaseName + ":" + owner.ownerName;
+      }
+      return "owner:tables:" + owner.ownerName;
+    },
+    getTableKey(owner, tableName) {
+      if (owner && owner.databaseName) {
+        return (
+          "owner:" +
+          owner.databaseName +
+          ":" +
+          owner.ownerName +
+          ":" +
+          tableName
+        );
+      }
+      return "owner:" + owner.ownerName + ":" + tableName;
+    },
     init() {
       if (this.extend && this.extend.expands) {
         this.expands = this.extend.expands;
@@ -154,18 +179,27 @@ export default {
       needDeletes.push(data.key);
       if (data.isOwner) {
         this.expands.forEach((one) => {
-          if (one == "owner:tables:" + data.ownerName) {
+          if (one == this.getOwnerTablesKey(data)) {
             needDeletes.push(one);
-          } else if (("" + one).startsWith("owner:" + data.ownerName + ":")) {
+          } else if (("" + one).startsWith(this.getOwnerKey(data) + ":")) {
             needDeletes.push(one);
           }
         });
       } else if (data.isOwnerTables) {
         this.expands.forEach((one) => {
-          if (one == "owner:tables:" + data.owner.ownerName) {
+          if (one == this.getOwnerTablesKey(data.owner)) {
             needDeletes.push(one);
           } else if (
-            ("" + one).startsWith("owner:" + data.owner.ownerName + ":")
+            ("" + one).startsWith(this.getOwnerKey(data.owner) + ":")
+          ) {
+            needDeletes.push(one);
+          }
+        });
+      } else if (data.isDatabase) {
+        this.expands.forEach((one) => {
+          if (
+            ("" + one).startsWith("owner:" + data.databaseName + ":") ||
+            ("" + one).startsWith("owner:tables:" + data.databaseName + ":")
           ) {
             needDeletes.push(one);
           }
@@ -213,6 +247,9 @@ export default {
           type: "ddl",
           ownerName: data.ownerName,
         };
+        if (data.databaseName) {
+          extend.databaseName = data.databaseName;
+        }
         this.toolboxWorker.openTabByExtend(extend);
       } else if (data.isTable) {
         let extend = {
@@ -222,6 +259,9 @@ export default {
           ownerName: data.owner.ownerName,
           tableName: data.tableName,
         };
+        if (data.owner && data.owner.databaseName) {
+          extend.databaseName = data.owner.databaseName;
+        }
         this.toolboxWorker.openTabByExtend(extend);
       }
     },
@@ -233,6 +273,9 @@ export default {
           type: "model",
           ownerName: data.ownerName,
         };
+        if (data.databaseName) {
+          extend.databaseName = data.databaseName;
+        }
         this.toolboxWorker.openTabByExtend(extend);
       } else if (data.isTable) {
         let extend = {
@@ -242,6 +285,9 @@ export default {
           ownerName: data.owner.ownerName,
           tableName: data.tableName,
         };
+        if (data.owner && data.owner.databaseName) {
+          extend.databaseName = data.owner.databaseName;
+        }
         this.toolboxWorker.openTabByExtend(extend);
       }
     },
@@ -254,9 +300,15 @@ export default {
       if (data) {
         if (data.isOwner) {
           extend.ownerName = data.ownerName;
+          if (data.databaseName) {
+            extend.databaseName = data.databaseName;
+          }
         } else if (data.isTable) {
           extend.ownerName = data.owner.ownerName;
           extend.tableName = data.tableName;
+          if (data.owner && data.owner.databaseName) {
+            extend.databaseName = data.owner.databaseName;
+          }
         }
       }
       this.toolboxWorker.openTabByExtend(extend);
@@ -274,7 +326,14 @@ export default {
       }
     },
     nodeDbClick(data, node, nodeView) {
-      if (data.isOwner) {
+      if (data.isDatabase) {
+        this.toolboxWorker.setDatabaseName(data.databaseName);
+        if (node.expanded) {
+          node.collapse();
+        } else {
+          node.expand();
+        }
+      } else if (data.isOwner) {
         if (node.expanded) {
           node.collapse();
         } else {
@@ -303,7 +362,11 @@ export default {
         } else if (data.isTable) {
           owner = data.owner;
         }
-        if (data.isOwner || data.isOwnerTables) {
+        if (data.isDatabase) {
+          extend.name = "查询[" + data.databaseName + "]库SQL";
+          extend.title = "查询[" + data.databaseName + "]库SQL";
+          extend.databaseName = data.databaseName;
+        } else if (data.isOwner || data.isOwnerTables) {
           extend.name = "查询[" + owner.ownerName + "]库SQL";
           extend.title = "查询[" + owner.ownerName + "]库SQL";
           extend.ownerName = owner.ownerName;
@@ -317,6 +380,12 @@ export default {
           extend.executeSQL =
             "SELECT * FROM " + owner.ownerName + "." + data.tableName + ";";
         }
+        if (owner && owner.databaseName) {
+          extend.databaseName = owner.databaseName;
+        }
+      }
+      if (this.tool.isEmpty(extend.databaseName) && this.toolboxWorker) {
+        extend.databaseName = this.toolboxWorker.databaseName;
       }
       // this.toolboxWorker.showSqlFiles({
       //   executeSQL: extend.executeSQL,
@@ -328,6 +397,20 @@ export default {
     },
     nodeContextmenu(event, data, node, nodeView) {
       let menus = [];
+      if (data.isDatabase) {
+        menus.push({
+          text: "刷新",
+          onClick: () => {
+            this.toReloadChildren(data);
+          },
+        });
+        menus.push({
+          text: "新建SQL查询",
+          onClick: () => {
+            this.toOpenSql(data);
+          },
+        });
+      }
       if (data.isOwner || data.isOwnerTables) {
         let owner = data;
         if (data.isOwnerTables) {
@@ -442,6 +525,9 @@ export default {
         ownerName: data.owner.ownerName,
         tableName: data.tableName,
       };
+      if (data.owner && data.owner.databaseName) {
+        extend.databaseName = data.owner.databaseName;
+      }
       this.toolboxWorker.openTabByExtend(extend);
     },
     toDelete(data) {
@@ -458,10 +544,14 @@ export default {
         .confirm(msg)
         .then(async () => {
           if (data.isOwner) {
-            await this.doOwnerDelete(data.ownerName);
+            await this.doOwnerDelete(data.ownerName, data.databaseName);
             this.refresh();
           } else if (data.isTable) {
-            await this.doTableDelete(data.owner.ownerName, data.tableName);
+            await this.doTableDelete(
+              data.owner.ownerName,
+              data.tableName,
+              data.owner.databaseName
+            );
             this.reloadChildren(data.owner);
           }
         })
@@ -481,26 +571,64 @@ export default {
         .confirm(msg)
         .then(async () => {
           if (data.isOwner) {
-            await this.doOwnerDataTrim(data.ownerName);
+            await this.doOwnerDataTrim(data.ownerName, data.databaseName);
           } else if (data.isTable) {
-            await this.doTableDataTrim(data.owner.ownerName, data.tableName);
+            await this.doTableDataTrim(
+              data.owner.ownerName,
+              data.tableName,
+              data.owner.databaseName
+            );
           }
         })
         .catch((e) => {});
     },
     async loadNode(node, resolve) {
       if (node.level === 0) {
-        let owners = await this.toolboxWorker.loadOwners();
+        // Root: PostgreSQL/OpenGauss 若后端返回 isDatabase，则先展示数据库列表（不带 databaseName）
+        let owners = await this.toolboxWorker.loadOwners({
+          _ignoreDatabaseName: true,
+        });
 
+        let list = [];
+        owners.forEach((one) => {
+          if (one.extend && one.extend.isDatabase) {
+            let dbNode = {
+              isDatabase: true,
+              databaseName: one.ownerName,
+              text: one.ownerName,
+              key: "database:" + one.ownerName,
+              leaf: false,
+            };
+            list.push(dbNode);
+          } else {
+            let owner = {};
+            owner.ownerName = one.ownerName;
+            owner.text = one.ownerName;
+            owner.isOwner = true;
+            owner.key = this.getOwnerKey(owner);
+            owner.leaf = false;
+            list.push(owner);
+          }
+        });
+        this.ownersChange(list);
+        resolve(list);
+        this.initTreeWidth();
+        return;
+      }
+      if (node.data.isDatabase) {
+        let databaseName = node.data.databaseName;
+        let owners = await this.toolboxWorker.loadOwners({
+          databaseName: databaseName,
+        });
         let list = [];
         owners.forEach((one) => {
           let owner = {};
           owner.ownerName = one.ownerName;
           owner.text = one.ownerName;
           owner.isOwner = true;
-          owner.key = "owner:" + owner.ownerName;
+          owner.databaseName = databaseName;
+          owner.key = this.getOwnerKey(owner);
           owner.leaf = false;
-
           list.push(owner);
         });
         this.ownersChange(list);
@@ -514,7 +642,7 @@ export default {
           {
             text: "Tables",
             isOwnerTables: true,
-            key: "owner:tables:" + owner.ownerName,
+            key: this.getOwnerTablesKey(owner),
             leaf: false,
             owner: owner,
           },
@@ -524,7 +652,9 @@ export default {
       }
       if (node.data.isOwnerTables) {
         let owner = node.data.owner;
-        let tables = await this.toolboxWorker.loadTables(owner.ownerName);
+        let tables = await this.toolboxWorker.loadTables(owner.ownerName, {
+          databaseName: owner.databaseName,
+        });
         let list = [];
         tables.forEach((one) => {
           let table = {};
@@ -532,7 +662,7 @@ export default {
           table.text = one.tableName;
           table.owner = owner;
           table.isTable = true;
-          table.key = "owner:" + owner.ownerName + ":" + table.tableName;
+          table.key = this.getTableKey(owner, table.tableName);
           table.leaf = true;
 
           list.push(table);
@@ -563,6 +693,9 @@ export default {
         type: "table",
         ownerName: owner.ownerName,
       };
+      if (owner && owner.databaseName) {
+        extend.databaseName = owner.databaseName;
+      }
       this.toolboxWorker.openTabByExtend(extend);
     },
     async toTableUpdate(table) {
@@ -574,6 +707,9 @@ export default {
         ownerName: ownerName,
         tableName: table.tableName,
       };
+      if (table.owner && table.owner.databaseName) {
+        extend.databaseName = table.owner.databaseName;
+      }
       this.toolboxWorker.openTabByExtend(extend);
     },
     async toExport(data) {
@@ -589,9 +725,17 @@ export default {
       if (data == null) {
       } else if (data.isOwner) {
         extend.options.from.ownerName = data.ownerName;
+        if (data.databaseName) {
+          extend.options.from.databaseName = data.databaseName;
+          extend.databaseName = data.databaseName;
+        }
       } else if (data.isTable) {
         extend.options.from.ownerName = data.owner.ownerName;
         extend.options.from.tableName = data.tableName;
+        if (data.owner && data.owner.databaseName) {
+          extend.options.from.databaseName = data.owner.databaseName;
+          extend.databaseName = data.owner.databaseName;
+        }
       }
       if (extend.options.from.ownerName) {
         title += "[" + extend.options.from.ownerName + "]库";
@@ -617,9 +761,17 @@ export default {
       if (data == null) {
       } else if (data.isOwner) {
         extend.options.to.ownerName = data.ownerName;
+        if (data.databaseName) {
+          extend.options.to.databaseName = data.databaseName;
+          extend.databaseName = data.databaseName;
+        }
       } else if (data.isTable) {
         extend.options.to.ownerName = data.owner.ownerName;
         extend.options.to.tableName = data.tableName;
+        if (data.owner && data.owner.databaseName) {
+          extend.options.to.databaseName = data.owner.databaseName;
+          extend.databaseName = data.owner.databaseName;
+        }
       }
       if (extend.options.to.ownerName) {
         title += "[" + extend.options.to.ownerName + "]库";
@@ -632,9 +784,10 @@ export default {
       extend.title = title;
       this.toolboxWorker.openTabByExtend(extend);
     },
-    async doOwnerDelete(ownerName) {
+    async doOwnerDelete(ownerName, databaseName) {
       let param = this.toolboxWorker.getWorkParam({
         ownerName: ownerName,
+        databaseName: databaseName,
       });
       let res = await this.server.database.ownerDelete(param);
       if (res.code != 0) {
@@ -644,10 +797,11 @@ export default {
       this.tool.success("删除成功");
       return true;
     },
-    async doTableDelete(ownerName, tableName) {
+    async doTableDelete(ownerName, tableName, databaseName) {
       let param = this.toolboxWorker.getWorkParam({
         ownerName: ownerName,
         tableName: tableName,
+        databaseName: databaseName,
       });
       let res = await this.server.database.tableDelete(param);
       if (res.code != 0) {
@@ -657,9 +811,10 @@ export default {
       this.tool.success("删除成功");
       return true;
     },
-    async doOwnerDataTrim(ownerName) {
+    async doOwnerDataTrim(ownerName, databaseName) {
       let param = this.toolboxWorker.getWorkParam({
         ownerName: ownerName,
+        databaseName: databaseName,
       });
       let res = await this.server.database.ownerDataTrim(param);
       if (res.code != 0) {
@@ -669,10 +824,11 @@ export default {
       this.tool.success("清空成功");
       return true;
     },
-    async doTableDataTrim(ownerName, tableName) {
+    async doTableDataTrim(ownerName, tableName, databaseName) {
       let param = this.toolboxWorker.getWorkParam({
         ownerName: ownerName,
         tableName: tableName,
+        databaseName: databaseName,
       });
       let res = await this.server.database.tableDataTrim(param);
       if (res.code != 0) {

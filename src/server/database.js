@@ -1,106 +1,157 @@
 import http from '@/server/http';
 
+const splitDatabaseName = function (param) {
+    param = param || {};
+    let databaseName = param.databaseName;
+    // 避免把 databaseName 放进 body（后端读取 Query 参数）
+    let body = Object.assign({}, param);
+    delete body.databaseName;
+    return { body, databaseName };
+};
+
+const buildConfig = function (databaseName) {
+    if (databaseName == null || databaseName === "") {
+        return undefined;
+    }
+    return {
+        params: { databaseName: databaseName },
+    };
+};
+
 let database = {
     check(param) {
-        return http.post('api/database/check', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/check', p.body, buildConfig(p.databaseName));
     },
     info(param) {
-        return http.post('api/database/info', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/info', p.body, buildConfig(p.databaseName));
     },
     data(param) {
-        return http.post('api/database/data', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/data', p.body, buildConfig(p.databaseName));
     },
     owners(param) {
-        return http.post('api/database/owners', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/owners', p.body, buildConfig(p.databaseName));
     },
     ownerCreate(param) {
-        return http.post('api/database/ownerCreate', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/ownerCreate', p.body, buildConfig(p.databaseName));
     },
     ownerDelete(param) {
-        return http.post('api/database/ownerDelete', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/ownerDelete', p.body, buildConfig(p.databaseName));
     },
     ownerCreateSql(param) {
-        return http.post('api/database/ownerCreateSql', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/ownerCreateSql', p.body, buildConfig(p.databaseName));
     },
     ddl(param) {
-        return http.post('api/database/ddl', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/ddl', p.body, buildConfig(p.databaseName));
     },
     model(param) {
-        return http.post('api/database/model', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/model', p.body, buildConfig(p.databaseName));
     },
     tables(param) {
-        return http.post('api/database/tables', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tables', p.body, buildConfig(p.databaseName));
     },
     tableDetail(param) {
-        return http.post('api/database/tableDetail', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableDetail', p.body, buildConfig(p.databaseName));
     },
     tableCreate(param) {
-        return http.post('api/database/tableCreate', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableCreate', p.body, buildConfig(p.databaseName));
     },
     tableCreateSql(param) {
-        return http.post('api/database/tableCreateSql', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableCreateSql', p.body, buildConfig(p.databaseName));
     },
     tableUpdate(param) {
-        return http.post('api/database/tableUpdate', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableUpdate', p.body, buildConfig(p.databaseName));
     },
     tableUpdateSql(param) {
-        return http.post('api/database/tableUpdateSql', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableUpdateSql', p.body, buildConfig(p.databaseName));
     },
     tableDelete(param) {
-        return http.post('api/database/tableDelete', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableDelete', p.body, buildConfig(p.databaseName));
     },
     tableDataTrim(param) {
-        return http.post('api/database/tableDataTrim', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableDataTrim', p.body, buildConfig(p.databaseName));
     },
     tableData(param) {
-        return http.post('api/database/tableData', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/tableData', p.body, buildConfig(p.databaseName));
     },
     dataListSql(param) {
-        return http.post('api/database/dataListSql', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/dataListSql', p.body, buildConfig(p.databaseName));
     },
     dataListExec(param) {
-        return http.post('api/database/dataListExec', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/dataListExec', p.body, buildConfig(p.databaseName));
     },
     executeSQL(param) {
-        return http.post('api/database/executeSQL', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/executeSQL', p.body, buildConfig(p.databaseName));
     },
     import(param) {
-        return http.post('api/database/import', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/import', p.body, buildConfig(p.databaseName));
     },
     export(param) {
-        return http.post('api/database/export', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/export', p.body, buildConfig(p.databaseName));
     },
     sync(param) {
-        return http.post('api/database/sync', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/sync', p.body, buildConfig(p.databaseName));
     },
     taskStatus(param) {
-        return http.post('api/database/taskStatus', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/taskStatus', p.body, buildConfig(p.databaseName));
     },
     taskStop(param) {
-        return http.post('api/database/taskStop', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/taskStop', p.body, buildConfig(p.databaseName));
     },
     taskClean(param) {
-        return http.post('api/database/taskClean', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/taskClean', p.body, buildConfig(p.databaseName));
     },
     close(param) {
-        return http.post('api/database/close', param);
+        let p = splitDatabaseName(param);
+        return http.post('api/database/close', p.body, buildConfig(p.databaseName));
     },
 
     test: {
         start(param) {
-            return http.post('api/database/test/start', param);
+            let p = splitDatabaseName(param);
+            return http.post('api/database/test/start', p.body, buildConfig(p.databaseName));
         },
         info(param) {
-            return http.post('api/database/test/info', param);
+            let p = splitDatabaseName(param);
+            return http.post('api/database/test/info', p.body, buildConfig(p.databaseName));
         },
         stop(param) {
-            return http.post('api/database/test/stop', param);
+            let p = splitDatabaseName(param);
+            return http.post('api/database/test/stop', p.body, buildConfig(p.databaseName));
         },
         list(param) {
-            return http.post('api/database/test/list', param);
+            let p = splitDatabaseName(param);
+            return http.post('api/database/test/list', p.body, buildConfig(p.databaseName));
         },
         delete(param) {
-            return http.post('api/database/test/delete', param);
+            let p = splitDatabaseName(param);
+            return http.post('api/database/test/delete', p.body, buildConfig(p.databaseName));
         },
     },
 };

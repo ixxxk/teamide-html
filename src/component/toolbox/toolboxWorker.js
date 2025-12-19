@@ -15,7 +15,17 @@ const newToolboxWorker = function (workerOption) {
                 tool.error(res.msg);
             }
             if (res.data && res.data.tab) {
-                item.openTime = new Date(res.data.tab.openTime).getTime();
+                let tab = res.data.tab;
+                item.openTime = new Date(tab.openTime).getTime();
+                if (tab.extend) {
+                    let extend = tool.getOptionJSON(tab.extend);
+                    if (extend != null) {
+                        item.extend = extend;
+                        if (tool.isNotEmpty(extend.databaseName)) {
+                            worker.databaseName = extend.databaseName;
+                        }
+                    }
+                }
             }
         },
         async toCopyItem(item) {
@@ -35,15 +45,44 @@ const newToolboxWorker = function (workerOption) {
         extend: workerOption.extend,
         workerId: workerId,
         itemsWorker: itemsWorker,
+        // PostgreSQL/OpenGauss 跨库访问：当前选中的数据库（databaseName）
+        databaseName: null,
 
         async init() {
             await this.initOpenTabs()
+        },
+        setDatabaseName(databaseName) {
+            worker.databaseName = databaseName;
         },
         getWorkParam(data) {
             data = data || {};
             data.workerId = worker.workerId
             data.toolboxId = worker.toolboxId
             data.toolboxType = worker.toolboxType
+            // 允许调用方显式指定 databaseName；否则尝试从激活 Tab 的 extend 中恢复；再退回到 worker.databaseName
+            if (data._ignoreDatabaseName) {
+                delete data._ignoreDatabaseName;
+                delete data.databaseName;
+                return data;
+            }
+            let databaseName = data.databaseName;
+            if (tool.isEmpty(databaseName)) {
+                let activeItem = worker.itemsWorker && worker.itemsWorker.activeItem;
+                if (
+                    activeItem &&
+                    activeItem.extend &&
+                    tool.isNotEmpty(activeItem.extend.databaseName)
+                ) {
+                    databaseName = activeItem.extend.databaseName;
+                } else if (tool.isNotEmpty(worker.databaseName)) {
+                    databaseName = worker.databaseName;
+                }
+            }
+            if (tool.isNotEmpty(databaseName)) {
+                data.databaseName = databaseName;
+            } else {
+                delete data.databaseName;
+            }
             return data;
         },
         async saveExtend(data) {

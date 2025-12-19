@@ -451,6 +451,10 @@ export default {
           },
         },
       };
+      if (this.extend && this.extend.databaseName) {
+        extend.options.from.databaseName = this.extend.databaseName;
+        extend.databaseName = this.extend.databaseName;
+      }
       let title = "[导出][根据SQL]";
       if (this.form.ownerName) {
         extend.options.from.ownerName = this.form.ownerName;
