@@ -222,10 +222,19 @@ export default {
       executeList: [],
       extendId: null,
       hasSqlFile: false,
+      preloadIng: false,
+      preloadDone: false,
+      preloadNextOwner: null,
     };
   },
   computed: {},
-  watch: {},
+  watch: {
+    "form.ownerName"(val) {
+      // 切换库时，优先加载对应库的字段补全
+      this.preloadDone = false;
+      this.preloadCompletion(val);
+    },
+  },
   methods: {
     onFocus() {
       if (this.inited) {
@@ -334,6 +343,8 @@ export default {
       this.ready = true;
       this.$refs.Editor.setValue(this.executeSQL);
       this.initSqlFile();
+      // 预加载补全词
+      this.preloadCompletion();
     },
     executeSQLChange(value) {
       this.executeSQL = value;
@@ -364,6 +375,70 @@ export default {
 
       if (menus.length > 0) {
         this.tool.showContextmenu(menus);
+      }
+    },
+    async preloadCompletion(ownerName) {
+      if (this.preloadIng) {
+        // 记录下一次需要优先加载的库
+        this.preloadNextOwner = ownerName;
+        return;
+      }
+      if (this.preloadDone) {
+        return;
+      }
+      this.preloadIng = true;
+      try {
+        // 1. 所有库名称
+        let owners = await this.toolboxWorker.loadOwners();
+        // 2. 表名
+        for (let i = 0; i < owners.length; i++) {
+          let owner = owners[i];
+          await this.toolboxWorker.loadTables(owner.ownerName);
+        }
+
+        // 3. 字段名（按当前库优先，防止一次性加载过大）
+        let targetOwners = [];
+        if (ownerName) {
+          owners.forEach((o) => {
+            if (o.ownerName === ownerName) {
+              targetOwners.push(o);
+            }
+          });
+        }
+        if (targetOwners.length == 0) {
+          // 至少加载第一个库，避免空字段补全
+          if (owners.length > 0) {
+            targetOwners.push(owners[0]);
+          }
+        }
+        const TABLE_COLUMN_LIMIT = 10; // 控制单库加载表数量，防止大库卡顿
+        for (let oi = 0; oi < targetOwners.length; oi++) {
+          let owner = targetOwners[oi];
+          let tables = await this.toolboxWorker.loadTables(owner.ownerName);
+          if (!tables) continue;
+          for (
+            let ti = 0;
+            ti < tables.length && ti < TABLE_COLUMN_LIMIT;
+            ti++
+          ) {
+            await this.toolboxWorker.getTableDetail(
+              owner.ownerName,
+              tables[ti].tableName
+            );
+          }
+        }
+        this.preloadDone = true;
+      } catch (e) {
+        // 静默失败即可，避免影响查询
+        console.error("preload sql completion error", e);
+      } finally {
+        this.preloadIng = false;
+        if (this.preloadNextOwner) {
+          let next = this.preloadNextOwner;
+          this.preloadNextOwner = null;
+          this.preloadDone = false;
+          this.preloadCompletion(next);
+        }
       }
     },
     toExportBySql(selectSql) {

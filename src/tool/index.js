@@ -22,6 +22,7 @@ tool.JSONbig = JSONbig;
 
 tool.addSqlName = monaco.addSqlName;
 tool.registerLanguages = monaco.registerLanguages;
+tool.setSqlDialect = monaco.setSqlDialect;
 tool.init = async function () {
     source.status = 'connecting';
     try {

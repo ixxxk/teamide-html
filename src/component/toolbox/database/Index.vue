@@ -159,6 +159,12 @@ export default {
       this.info = data.info;
       this.columnTypeInfoList = data.columnTypeInfoList || [];
       this.indexTypeInfoList = data.indexTypeInfoList || [];
+      // 按数据库类型切换 SQL 关键字补全
+      if (this.info && this.info.dialectType) {
+        this.tool.setSqlDialect(this.info.dialectType);
+      } else {
+        this.tool.setSqlDialect(null);
+      }
     },
     formatParam(param) {
       param = param || {};
@@ -306,6 +312,9 @@ export default {
 
       list.forEach((one) => {
         this.tool.addSqlName(one.tableName);
+        if (ownerName) {
+          this.tool.addSqlName(ownerName + "." + one.tableName);
+        }
       });
       return list;
     },
@@ -329,6 +338,10 @@ export default {
         tableDetail.indexList = tableDetail.indexList || [];
         tableDetail.columnList.forEach((one) => {
           this.tool.addSqlName(one.columnName);
+          this.tool.addSqlName(tableName + "." + one.columnName);
+          this.tool.addSqlName(
+            ownerName + "." + tableName + "." + one.columnName
+          );
         });
       }
       return tableDetail;
