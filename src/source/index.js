@@ -202,6 +202,7 @@ source.initUserToolboxSSHList = async (toolboxList) => {
         let data = res.data || {};
         toolboxList = data.toolboxList || [];
     }
+    toolboxList = toolboxList || [];
     form.sshToolboxOptions.splice(0, form.sshToolboxOptions.length)
 
     var sshToolboxList = [];
