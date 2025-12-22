@@ -37,35 +37,48 @@
         </el-form>
       </tm-layout>
       <tm-layout-bar right></tm-layout-bar>
-      <tm-layout width="auto" class="app-scroll-bar">
-        <el-form class="pdt-10 pdlr-10" size="mini" @submit.native.prevent>
-          <el-form-item label="转换为" class="mgb-5">
-            <el-checkbox-group v-model="toTypes" @change="change">
-              <el-checkbox
-                v-for="(one, index) in types"
-                :key="index"
-                :label="one.value"
-                :disabled="one.disabled"
-              >
-                {{ one.text }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </el-form-item>
-        </el-form>
-        <template v-for="(one, index) in tos">
-          <div :key="index">
-            <div class="pdlr-5 pdb-5">{{ one.toType }}</div>
-            <div style="height: 400px">
-              <Editor ref="viewEditor" :source="source" :language="one.toType">
-              </Editor>
-            </div>
-            <template v-if="one.error != null">
-              <div class="color-error pdlr-10">
-                异常： <span>{{ one.error }}</span>
+      <tm-layout width="auto" class="tools-json-to-layout">
+        <div class="tools-json-to-container">
+          <el-form class="pdt-10 pdlr-10" size="mini" @submit.native.prevent>
+            <el-form-item label="转换为" class="mgb-5">
+              <el-checkbox-group v-model="toTypes" @change="change">
+                <el-checkbox
+                  v-for="(one, index) in types"
+                  :key="index"
+                  :label="one.value"
+                  :disabled="one.disabled"
+                >
+                  {{ one.text }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form>
+
+          <div
+            class="tools-json-to-body"
+            :class="{ 'tools-json-to-body-split': tos && tos.length > 1 }"
+          >
+            <div
+              v-for="(one, index) in tos"
+              :key="index"
+              class="tools-json-to-pane"
+            >
+              <div class="pdb-5">{{ one.toType }}</div>
+              <div class="tools-json-to-editor">
+                <Editor
+                  ref="viewEditor"
+                  :source="source"
+                  :language="one.toType"
+                ></Editor>
               </div>
-            </template>
+              <template v-if="one.error != null">
+                <div class="tools-json-to-error color-error pdlr-10">
+                  异常： <span>{{ one.error }}</span>
+                </div>
+              </template>
+            </div>
           </div>
-        </template>
+        </div>
       </tm-layout>
     </tm-layout>
   </div>
@@ -210,5 +223,45 @@ export default {
   width: 100%;
   height: 100%;
   user-select: text;
+}
+
+.tm-layout.tools-json-to-layout {
+  overflow: hidden;
+}
+
+.tools-json-to-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tools-json-to-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px 10px 10px;
+  gap: 10px;
+  overflow: auto;
+}
+
+.tools-json-to-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tools-json-to-editor {
+  flex: 1;
+  min-height: 0;
+}
+
+.tools-json-to-error {
+  max-height: 160px;
+  overflow: auto;
 }
 </style>
